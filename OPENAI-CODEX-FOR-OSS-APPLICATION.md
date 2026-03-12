@@ -10,11 +10,10 @@ Official page:
 
 Before submitting:
 
-- create a public GitHub repository for `Munch`
-- push the `main` branch
-- make sure `README.md`, `LICENSE`, `CONTRIBUTING.md`, and `SECURITY.md` are visible
+- confirm the public GitHub repository is live: `https://github.com/huxiang1126/Munch`
+- confirm `README.md`, `LICENSE`, `CONTRIBUTING.md`, and `SECURITY.md` are visible
 - confirm your GitHub profile is public enough for reviewer context
-- gather your OpenAI Organization ID
+- confirm your OpenAI Organization ID is correct: `org-M9Vyjszk9vewmXnX66mEmoGF`
 
 ## Suggested Repository Positioning
 
@@ -42,10 +41,38 @@ ChatGPT Pro would help maintainers move faster on day-to-day engineering tasks: 
 
 ## What Still Needs Manual Input
 
-You still need to provide:
+Core values already fixed for submission:
 
-- your public GitHub username
-- your public repository URL
-- your role as maintainer
-- your OpenAI Organization ID
-- any usage/adoption context once the repo is public
+- GitHub username: `huxiang1126`
+- Repository URL: `https://github.com/huxiang1126/Munch`
+- Maintainer role: `Founder and primary maintainer of Munch`
+- OpenAI Organization ID: `org-M9Vyjszk9vewmXnX66mEmoGF`
+- Application email: `guechouldalod@outlook.com`
+
+Still worth adding manually if available:
+
+- any current users, testers, or collaborators
+- examples of contributor interest once the repo is public
+- why maintainership time is currently constrained without Codex support
+
+## Ready-to-Copy Submission Values
+
+### GitHub username
+
+`huxiang1126`
+
+### Repository URL
+
+`https://github.com/huxiang1126/Munch`
+
+### OpenAI Organization ID
+
+`org-M9Vyjszk9vewmXnX66mEmoGF`
+
+### Application email
+
+`guechouldalod@outlook.com`
+
+### Role
+
+`Founder and primary maintainer of Munch`
