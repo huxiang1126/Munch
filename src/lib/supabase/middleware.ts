@@ -92,6 +92,10 @@ async function authenticateRequest(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  if (pathname.startsWith("/api/")) {
+    return createPassthroughResponse(request);
+  }
+
   if (isPublicPath(pathname)) {
     if (pathname.startsWith("/login")) {
       const auth = await authenticateRequest(request);

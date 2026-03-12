@@ -26,16 +26,16 @@ async function fetcher<T>(url: string) {
 const defaultMessageByStatus: Partial<Record<HistoryItem["status"], string>> = {
   pending: "任务已创建，准备进入队列",
   compiling: "正在编译模板参数",
-  generating: "正在调用模型生成图片",
+  generating: "正在生成图片",
   completed: "生成完成",
   failed: "生成失败",
 };
 
 const statusLabelByStatus: Partial<Record<HistoryItem["status"], string>> = {
-  pending: "Queued",
-  compiling: "Preparing",
-  generating: "Generating",
-  failed: "Failed",
+  pending: "处理中",
+  compiling: "准备中",
+  generating: "生成中",
+  failed: "失败",
 };
 
 function PendingGenerationCard({
@@ -58,6 +58,11 @@ function PendingGenerationCard({
   return (
     <div className="relative mb-1 break-inside-avoid overflow-hidden rounded-[6px] border border-white/[0.06] bg-black">
       <div className="relative aspect-[2/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(13,13,14,0.92)_48%,rgba(6,6,7,1)_100%)]">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-[-8%] top-[12%] h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute right-[-12%] top-[28%] h-40 w-40 rounded-full bg-white/8 blur-3xl" />
+          <div className="absolute bottom-[10%] left-[24%] h-36 w-36 rounded-full bg-white/8 blur-[72px]" />
+        </div>
         <div className="absolute inset-0 animate-pulse bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_42%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
         <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-white/6">
@@ -83,7 +88,7 @@ function PendingGenerationCard({
               {statusLabel}
             </span>
             <span className="text-xs text-white/45">
-              {isFailed ? "Provider error" : "Waiting for result"}
+              {isFailed ? "已停止" : "请稍候"}
             </span>
           </div>
 

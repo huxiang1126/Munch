@@ -86,16 +86,16 @@ export async function generateImages(
 
   input.onStatus?.(
     taskIds.length > 1
-      ? `已向 Kie 提交 ${taskIds.length} 个任务，等待队列响应...`
-      : "任务已提交到 Kie，等待队列响应...",
+      ? `已提交 ${taskIds.length} 个任务，等待队列响应...`
+      : "任务已提交，等待队列响应...",
   );
 
   const messagesByState: Record<KieRecordInfoData["state"], string> = {
-    waiting: "Kie 已接收任务，等待进入执行队列...",
-    queuing: "Kie 正在排队分配资源...",
-    generating: "Kie 正在生成图片...",
-    success: "Kie 已返回图片结果",
-    fail: "Kie 返回了失败状态",
+    waiting: "任务已接收，等待进入执行队列...",
+    queuing: "正在排队分配资源...",
+    generating: "正在生成图片...",
+    success: "图片结果已返回",
+    fail: "任务返回了失败状态",
   };
   const outputs: ImageGenerationResult[] = [];
 
@@ -113,7 +113,7 @@ export async function generateImages(
         const resultUrl = resultJson?.resultUrls?.[0];
 
         if (!resultUrl) {
-          throw new Error("Kie 任务完成但没有返回图片 URL");
+          throw new Error("任务完成但没有返回图片结果");
         }
 
         outputs.push({
@@ -128,19 +128,19 @@ export async function generateImages(
 
       if (record.state === "fail") {
         const reason = [record.failCode, record.failMsg].filter(Boolean).join(" · ");
-        throw new Error(`Kie 生成失败${reason ? `: ${reason}` : ""}`);
+        throw new Error(`生成失败${reason ? `: ${reason}` : ""}`);
       }
 
       await wait(POLL_INTERVAL_MS);
     }
 
     if (!completed) {
-      throw new Error("Kie 生成超时，请稍后重试");
+      throw new Error("生成超时，请稍后重试");
     }
   }
 
   if (outputs.length === 0) {
-    throw new Error("Kie 没有返回任何图片结果");
+    throw new Error("没有返回任何图片结果");
   }
 
   return outputs;
@@ -158,7 +158,7 @@ async function createKieTask(payload: Record<string, unknown>, apiKey: string) {
 
   const result = (await response.json()) as KieApiResponse<KieCreateTaskData>;
   if (!response.ok || result.code !== 200 || !result.data?.taskId) {
-    throw new Error(`Kie 创建任务失败: ${result.msg || "Unknown error"}`);
+    throw new Error(`创建任务失败: ${result.msg || "Unknown error"}`);
   }
 
   return result.data;
@@ -176,7 +176,7 @@ async function getKieTaskRecord(taskId: string, apiKey: string) {
 
   const result = (await response.json()) as KieApiResponse<KieRecordInfoData>;
   if (!response.ok || result.code !== 200 || !result.data) {
-    throw new Error(`Kie 查询任务失败: ${result.msg || "Unknown error"}`);
+    throw new Error(`查询任务失败: ${result.msg || "Unknown error"}`);
   }
 
   return result.data;
@@ -206,7 +206,7 @@ async function uploadReferenceImages(referenceImages: Record<string, string>, ap
       };
 
       if (!response.ok || result.code !== 200 || !result.data?.downloadUrl) {
-        throw new Error(`Kie 参考图上传失败: ${result.msg || "Unknown error"}`);
+        throw new Error(`参考图上传失败: ${result.msg || "Unknown error"}`);
       }
 
       return result.data.downloadUrl;

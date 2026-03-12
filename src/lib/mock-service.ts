@@ -299,7 +299,7 @@ async function runGenerationTask(userId: string, taskId: string) {
       message:
         generation.generationMode === "free" && generation.thinkingEnabled
           ? "意图已理解，正在生成图片..."
-          : "参数已确认，正在调用模型生成图片...",
+          : "参数已确认，正在生成图片...",
     });
     await wait(700);
 

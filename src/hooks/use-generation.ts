@@ -23,6 +23,23 @@ async function serializeImageFiles(imageFiles: Record<string, File> = {}) {
   return Object.fromEntries(entries);
 }
 
+async function readResponsePayload<T>(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+
+  const text = await response.text();
+  const looksLikeHtml = contentType.includes("text/html") || text.trim().startsWith("<");
+
+  if (response.redirected || response.url.includes("/login") || looksLikeHtml) {
+    throw new Error("登录状态已失效，请刷新页面后重试");
+  }
+
+  throw new Error("服务返回异常，请稍后重试");
+}
+
 export function useGeneration() {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,11 +68,11 @@ export function useGeneration() {
       });
 
       if (!response.ok) {
-        const error = (await response.json()) as ErrorResponse;
+        const error = await readResponsePayload<ErrorResponse>(response);
         throw new Error(error.message);
       }
 
-      const data = (await response.json()) as GenerateResponse;
+      const data = await readResponsePayload<GenerateResponse>(response);
       setTaskId(data.taskId);
       return data;
     } finally {

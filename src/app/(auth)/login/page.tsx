@@ -91,8 +91,7 @@ export default function LoginPage() {
         }
       }
 
-      const nextPath =
-        isLocalAdmin && redirectTo === "/" ? "/admin/templates" : redirectTo;
+      const nextPath = redirectTo;
 
       startTransition(() => {
         setIsModalOpen(false);
