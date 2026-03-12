@@ -103,6 +103,33 @@ export function getHistoryItem(userId: string, taskId: string) {
   };
 }
 
+export function deleteHistoryItem(userId: string, taskId: string) {
+  const generations = state.generations.get(userId) ?? [];
+  const index = generations.findIndex((item) => item.id === taskId);
+
+  if (index === -1) {
+    throw new AppError(404, "TASK_NOT_FOUND", "历史记录不存在");
+  }
+
+  const generation = generations[index];
+  const images = state.images.get(taskId) ?? [];
+
+  for (const image of images) {
+    state.favorites.delete(image.id);
+  }
+
+  generations.splice(index, 1);
+  state.generations.set(userId, generations);
+  state.images.delete(taskId);
+  state.streams.delete(taskId);
+  state.runningTasks.delete(taskId);
+
+  return {
+    id: generation.id,
+    deleted: true,
+  };
+}
+
 export function getImageById(userId: string, imageId: string) {
   const ownedTaskIds = new Set((state.generations.get(userId) ?? []).map((item) => item.id));
   for (const [taskId, images] of state.images.entries()) {

@@ -154,23 +154,6 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
                 </p>
               </div>
 
-              {Object.keys(detail.variables).length > 0 ? (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-text-secondary">生成参数</p>
-                  <div className="space-y-1.5">
-                    {Object.entries(detail.variables).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between gap-3 rounded-xl bg-bg-hover/60 px-3 py-2 text-sm"
-                      >
-                        <span className="truncate text-text-secondary">{key}</span>
-                        <span className="max-w-[50%] truncate text-right text-text-primary">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
               {detail.prompt ? (
                 <div>
                   <p className="mb-2 text-sm font-medium text-text-secondary">

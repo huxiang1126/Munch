@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Brain, Images, Plus, X } from "lucide-react";
+import { ArrowRight, Brain, Plus, X } from "lucide-react";
 
 import { AssetPickerDialog } from "@/components/assets/asset-picker-dialog";
 import { useGeneration } from "@/hooks/use-generation";
@@ -18,7 +18,6 @@ export function InputBar() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const { isSubmitting, startGeneration } = useGeneration();
   const selectedModel = useWorkspaceStore((state) => state.selectedModel);
@@ -30,6 +29,7 @@ export function InputBar() {
   const setFreePrompt = useWorkspaceStore((state) => state.setFreePrompt);
   const setThinkingEnabled = useWorkspaceStore((state) => state.setThinkingEnabled);
   const addFreeImageFiles = useWorkspaceStore((state) => state.addFreeImageFiles);
+  const clearFreeImageFiles = useWorkspaceStore((state) => state.clearFreeImageFiles);
   const removeFreeImageFile = useWorkspaceStore((state) => state.removeFreeImageFile);
 
   const canGenerate = freePrompt.trim().length > 0;
@@ -83,22 +83,12 @@ export function InputBar() {
         aspectRatio,
         imageFiles: freeImageFiles,
       });
+      setFreePrompt("");
+      clearFreeImageFiles();
       router.push(`/studio?taskId=${encodeURIComponent(data.taskId)}`);
     } catch (error) {
       window.alert(`生成失败：${error instanceof Error ? error.message : "未知错误"}`);
     }
-  }
-
-  function handlePickImages() {
-    fileInputRef.current?.click();
-  }
-
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith("image/"));
-    if (files.length > 0) {
-      addFreeImageFiles(files);
-    }
-    event.currentTarget.value = "";
   }
 
   async function handleSelectAsset(file: File) {
@@ -111,18 +101,10 @@ export function InputBar() {
         open={assetPickerOpen}
         onOpenChange={setAssetPickerOpen}
         onSelect={handleSelectAsset}
-        title="我的素材库"
-        description="选择已经上传过的参考图，或上传新的素材。"
+        title="素材库"
+        description="最近上传的素材会显示在这里，也可以继续上传新的参考图。"
       />
       <div className="glass-panel rounded-[28px] p-3 shadow-[0_24px_60px_-30px_rgba(193,39,45,0.32)]">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          hidden
-          onChange={handleFileChange}
-        />
         {freeImagePreviews.length > 0 ? (
           <div className="mb-2 flex flex-wrap gap-2 px-2 pt-1">
             {freeImagePreviews.map((image) => (
@@ -157,19 +139,11 @@ export function InputBar() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handlePickImages}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-bg-elevated/80 text-text-tertiary transition hover:-translate-y-0.5 hover:border-border-hover hover:bg-bg-hover hover:text-text-primary"
-              aria-label="上传参考图"
-            >
-              <Plus className="size-5" />
-            </button>
-            <button
-              type="button"
               onClick={() => setAssetPickerOpen(true)}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-bg-elevated/80 text-text-tertiary transition hover:-translate-y-0.5 hover:border-border-hover hover:bg-bg-hover hover:text-text-primary"
               aria-label="打开素材库"
             >
-              <Images className="size-5" />
+              <Plus className="size-5" />
             </button>
             <div className="relative">
               <ModelBadge onClick={() => setPanelOpen((current) => !current)} />

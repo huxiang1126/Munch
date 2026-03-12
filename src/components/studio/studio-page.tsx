@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
+import { Download, LoaderCircle, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { VariableEditor } from "@/components/creation/variable-editor";
@@ -40,9 +41,15 @@ const statusLabelByStatus: Partial<Record<HistoryItem["status"], string>> = {
 function PendingGenerationCard({
   item,
   event,
+  actioning,
+  onDelete,
+  onRegenerate,
 }: {
   item: HistoryItem;
   event?: GenerationStatusEvent;
+  actioning: "delete" | "regenerate" | null;
+  onDelete: (id: string) => Promise<void> | void;
+  onRegenerate: (id: string) => Promise<void> | void;
 }) {
   const message = event?.message ?? defaultMessageByStatus[item.status] ?? "任务处理中";
   const isFailed = item.status === "failed" || event?.status === "failed";
@@ -86,6 +93,28 @@ function PendingGenerationCard({
               <p className="text-sm font-medium text-white">{item.templateName}</p>
               <p className="mt-1 text-xs text-white/55">{getModelLabel(item.model)}</p>
               <p className="mt-3 text-xs leading-5 text-white/58">{message}</p>
+              {isFailed ? (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void onRegenerate(item.id)}
+                    disabled={actioning !== null}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/8 px-2.5 py-1.5 text-[11px] font-medium text-white transition hover:border-white/24 hover:bg-white/12 disabled:opacity-60"
+                  >
+                    {actioning === "regenerate" ? <LoaderCircle className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                    重新生成
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onDelete(item.id)}
+                    disabled={actioning !== null}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white disabled:opacity-60"
+                  >
+                    {actioning === "delete" ? <LoaderCircle className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                    删除
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -97,15 +126,20 @@ function PendingGenerationCard({
 function CompletedGenerationCard({
   item,
   highlight,
+  actioning,
+  onDelete,
+  onRegenerate,
   onSelect,
 }: {
   item: HistoryItem;
   highlight: boolean;
+  actioning: "delete" | "regenerate" | null;
+  onDelete: (id: string) => Promise<void> | void;
+  onRegenerate: (id: string) => Promise<void> | void;
   onSelect: (id: string) => void;
 }) {
   return (
-    <button
-      type="button"
+    <div
       onClick={() => onSelect(item.id)}
       className={`group relative mb-1 cursor-pointer break-inside-avoid overflow-hidden rounded-[6px] border border-white/[0.04] bg-black text-left transition duration-200 hover:border-white/18 active:scale-[0.985] ${
         highlight ? "studio-card-reveal" : ""
@@ -119,16 +153,51 @@ function CompletedGenerationCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_42%,rgba(0,0,0,0.16)_72%,rgba(0,0,0,0.76)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 px-4 pb-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute inset-x-0 bottom-0 z-10 translate-y-2 px-4 pb-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <p className="text-sm font-medium text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]">
             {item.templateName}
           </p>
           <p className="mt-1 text-xs text-white/60">
             {getModelLabel(item.model)}
           </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                void onRegenerate(item.id);
+              }}
+              disabled={actioning !== null}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/8 px-2 py-1.5 text-[11px] font-medium text-white transition hover:border-white/24 hover:bg-white/12 disabled:opacity-60"
+            >
+              {actioning === "regenerate" ? <LoaderCircle className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+              重新生成
+            </button>
+            <a
+              href={item.thumbnailUrl}
+              download
+              onClick={(event) => event.stopPropagation()}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white"
+            >
+              <Download className="size-3.5" />
+              下载
+            </a>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                void onDelete(item.id);
+              }}
+              disabled={actioning !== null}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white disabled:opacity-60"
+            >
+              {actioning === "delete" ? <LoaderCircle className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+              删除
+            </button>
+          </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -139,6 +208,8 @@ export function StudioPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [taskEvents, setTaskEvents] = useState<Record<string, GenerationStatusEvent>>({});
   const [recentlyCompletedId, setRecentlyCompletedId] = useState<string | null>(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const [actioningKind, setActioningKind] = useState<"delete" | "regenerate" | null>(null);
   const activeTaskId = searchParams.get("taskId");
   const selectedTemplateId = useWorkspaceStore((state) => state.selectedTemplateId);
   const selectedModel = useWorkspaceStore((state) => state.selectedModel);
@@ -183,6 +254,99 @@ export function StudioPage() {
     const timeoutId = window.setTimeout(() => setRecentlyCompletedId(null), 650);
     return () => window.clearTimeout(timeoutId);
   }, [recentlyCompletedId]);
+
+  async function createGenerationFromHistory(id: string) {
+    const detailResponse = await fetch(`/api/history/${id}`);
+    if (!detailResponse.ok) {
+      throw new Error("读取历史详情失败");
+    }
+
+    const detail = (await detailResponse.json()) as {
+      templateId: string;
+      variables: Record<string, string>;
+      prompt?: string;
+      customPrompt?: string;
+      thinkingEnabled?: boolean;
+      generationMode?: "template" | "free";
+      aspectRatio?: string;
+      model: HistoryItem["model"];
+      imageCount: HistoryItem["imageCount"];
+      referenceImages?: Record<string, string>;
+    };
+
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        templateId: detail.generationMode === "free" ? undefined : detail.templateId,
+        prompt: detail.generationMode === "free" ? detail.prompt : undefined,
+        variables: detail.variables,
+        model: detail.model,
+        imageCount: detail.imageCount,
+        customPrompt: detail.customPrompt,
+        thinkingEnabled: detail.thinkingEnabled,
+        aspectRatio: detail.aspectRatio,
+        referenceImages: detail.referenceImages,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(error?.message ?? "重新生成失败");
+    }
+
+    return (await response.json()) as { taskId: string };
+  }
+
+  async function handleRegenerate(id: string) {
+    setActioningId(id);
+    setActioningKind("regenerate");
+
+    try {
+      const data = await createGenerationFromHistory(id);
+      await mutate();
+      router.push(`/studio?taskId=${encodeURIComponent(data.taskId)}`);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "重新生成失败");
+    } finally {
+      setActioningId(null);
+      setActioningKind(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setActioningId(id);
+    setActioningKind("delete");
+
+    try {
+      const response = await fetch(`/api/history/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(error?.message ?? "删除失败");
+      }
+
+      if (selectedId === id) {
+        setSelectedId(null);
+      }
+
+      setTaskEvents((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      await mutate();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setActioningId(null);
+      setActioningKind(null);
+    }
+  }
 
   const items = data?.items ?? [];
   const optimisticTask =
@@ -244,6 +408,9 @@ export function StudioPage() {
               key={item.id}
               item={item}
               highlight={item.id === recentlyCompletedId}
+              actioning={actioningId === item.id ? actioningKind : null}
+              onDelete={handleDelete}
+              onRegenerate={handleRegenerate}
               onSelect={setSelectedId}
             />
           ) : (
@@ -251,6 +418,9 @@ export function StudioPage() {
               key={item.id}
               item={item}
               event={taskEvents[item.id]}
+              actioning={actioningId === item.id ? actioningKind : null}
+              onDelete={handleDelete}
+              onRegenerate={handleRegenerate}
             />
           ),
         )}
