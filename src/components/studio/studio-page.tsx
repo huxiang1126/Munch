@@ -180,9 +180,9 @@ function CompletedGenerationCard({
             title="下载"
             aria-label="下载"
             onClick={(event) => event.stopPropagation()}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white backdrop-blur-md transition hover:border-white/24 hover:bg-black/65"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 !text-white visited:!text-white hover:!text-white backdrop-blur-md transition hover:border-white/24 hover:bg-black/65"
           >
-            <Download className="size-4" />
+            <Download className="size-4 !text-white" />
           </a>
           <button
             type="button"
