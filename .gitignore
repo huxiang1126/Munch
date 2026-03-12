@@ -1,0 +1,15 @@
+node_modules
+.pnpm-store
+.next
+.next_*
+.env.local
+.env*.local
+.munch
+coverage
+dist
+*.log
+*.pid
+tsconfig.tsbuildinfo
+.DS_Store
+.claude/settings.local.json
+public/admin-uploads
