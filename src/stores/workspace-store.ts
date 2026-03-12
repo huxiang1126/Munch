@@ -37,15 +37,56 @@ function getTemplateFromList(templateId: string, templateList: DbTemplate[]) {
   return templateList.find((item) => item.id === templateId) ?? defaultTemplate;
 }
 
-function getDefaultVariables(templateList = fallbackTemplates, templateId = defaultTemplate.id) {
+function sanitizeVariablesForTemplate(
+  variables: Record<string, string> | undefined,
+  templateList = fallbackTemplates,
+  templateId = defaultTemplate.id,
+) {
   const template = getTemplateFromList(templateId, templateList);
+  const input = variables ?? {};
 
   return Object.fromEntries(
-    template.variables.map((variable) => [
-      variable.id,
-      variable.defaultValue ?? String(variable.defaultNumber ?? ""),
-    ]),
+    template.variables.map((variable) => {
+      const candidate = input[variable.id];
+
+      if (variable.type === "image") {
+        return [variable.id, ""];
+      }
+
+      if (variable.type === "slider") {
+        if (!candidate) {
+          return [variable.id, String(variable.defaultNumber ?? variable.min ?? 0)];
+        }
+
+        const numeric = Number(candidate);
+        const fallback = variable.defaultNumber ?? variable.min ?? 0;
+
+        if (!Number.isFinite(numeric)) {
+          return [variable.id, String(fallback)];
+        }
+
+        const min = variable.min ?? numeric;
+        const max = variable.max ?? numeric;
+        const clamped = Math.min(Math.max(numeric, min), max);
+        return [variable.id, String(clamped)];
+      }
+
+      if (variable.type === "select") {
+        const allowed = new Set((variable.options ?? []).map((option) => option.value));
+        if (candidate && allowed.has(candidate)) {
+          return [variable.id, candidate];
+        }
+
+        return [variable.id, variable.defaultValue ?? ""];
+      }
+
+      return [variable.id, candidate ?? variable.defaultValue ?? String(variable.defaultNumber ?? "")];
+    }),
   );
+}
+
+function getDefaultVariables(templateList = fallbackTemplates, templateId = defaultTemplate.id) {
+  return sanitizeVariablesForTemplate(undefined, templateList, templateId);
 }
 
 function getTemplateState(templateId: string, templateList = fallbackTemplates) {
@@ -244,9 +285,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         const selectedTemplate =
           templates.find((template) => template.id === selectedTemplateId) ?? templates[0] ?? defaultTemplate;
 
-        return {
-          ...currentState,
-          ...typedState,
+          return {
+            ...currentState,
+            ...typedState,
           templates,
           selectedTemplateId,
           activeCategoryFilter:
@@ -263,10 +304,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           customPrompt: typedState?.customPrompt ?? "",
           freeImageFiles: {},
           imageFiles: {},
-          variables:
-            typedState?.variables && Object.keys(typedState.variables).length > 0
-              ? typedState.variables
-              : getDefaultVariables(templates, selectedTemplateId),
+          variables: sanitizeVariablesForTemplate(
+            typedState?.variables,
+            templates,
+            selectedTemplateId,
+          ),
         };
       },
     },
