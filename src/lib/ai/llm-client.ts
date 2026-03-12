@@ -14,6 +14,14 @@ export interface PromptCompilationInput {
 export interface FreePromptThinkingInput {
   prompt: string;
   targetModel: string;
+  referenceTemplates?: Array<{
+    name: string;
+    category: string;
+    description: string;
+    tags: string[];
+    skillPrompt: string;
+    basePrompt: string;
+  }>;
 }
 
 export async function compilePrompt(
@@ -36,6 +44,7 @@ export async function compilePrompt(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
+      model: LLM_CONFIG.apiModel,
       messages: [
         {
           role: "system",
@@ -113,8 +122,12 @@ export async function compileFreePromptWithThinking(
   const apiKey = process.env[LLM_CONFIG.apiKeyEnv] || process.env[LLM_CONFIG.fallbackApiKeyEnv];
   const rawPrompt = input.prompt.trim();
 
-  if (!apiKey || !rawPrompt) {
+  if (!rawPrompt) {
     return rawPrompt;
+  }
+
+  if (!apiKey) {
+    return buildFreePromptThinkingFallback(input);
   }
 
   const response = await fetch(`${BASE_URL}/chat/completions`, {
@@ -124,13 +137,14 @@ export async function compileFreePromptWithThinking(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
+      model: LLM_CONFIG.apiModel,
       messages: [
         {
           role: "system",
           content: [
             {
               type: "text",
-              text: `You are an image prompt strategist. Interpret the user's intent and rewrite it into one strong production-ready image prompt for the target model "${input.targetModel}". Preserve the user's core subject, mood, composition, and constraints. Make it clearer, more visual, and more generation-ready, but do not add random concepts that were not implied. Output only the final prompt text.`,
+              text: `You are an image prompt strategist. Interpret the user's intent and rewrite it into one strong production-ready image prompt for the target model "${input.targetModel}". Preserve the user's core subject, mood, composition, and constraints. Make it clearer, more visual, more specific, and more generation-ready, but do not add random concepts that were not implied. Use any provided template references only as stylistic scaffolding, not as a hard copy target. Output only the final prompt text.`,
             },
           ],
         },
@@ -139,7 +153,7 @@ export async function compileFreePromptWithThinking(
           content: [
             {
               type: "text",
-              text: rawPrompt,
+              text: buildFreePromptThinkingRequest(input),
             },
           ],
         },
@@ -172,12 +186,19 @@ export async function compileFreePromptWithThinking(
 
   if (result.error || !Array.isArray(result.choices)) {
     console.error("Free prompt thinking returned error payload, falling back to raw prompt");
-    return rawPrompt;
+    return buildFreePromptThinkingFallback(input);
   }
 
   const content = result.choices[0]?.message?.content;
   if (typeof content === "string") {
-    return content.trim() || rawPrompt;
+    const compiled = content.trim();
+    if (!compiled) {
+      return buildFreePromptThinkingFallback(input);
+    }
+    if (normalizePrompt(compiled) === normalizePrompt(rawPrompt)) {
+      return buildFreePromptThinkingFallback(input);
+    }
+    return compiled;
   }
 
   if (Array.isArray(content)) {
@@ -187,10 +208,16 @@ export async function compileFreePromptWithThinking(
       .join("\n")
       .trim();
 
-    return merged || rawPrompt;
+    if (!merged) {
+      return buildFreePromptThinkingFallback(input);
+    }
+    if (normalizePrompt(merged) === normalizePrompt(rawPrompt)) {
+      return buildFreePromptThinkingFallback(input);
+    }
+    return merged;
   }
 
-  return rawPrompt;
+  return buildFreePromptThinkingFallback(input);
 }
 
 function manualCompile(
@@ -211,4 +238,42 @@ function appendCustomPrompt(basePrompt: string, customPrompt: string) {
   }
 
   return `${basePrompt}\n\nAdditional user direction: ${trimmed}`;
+}
+
+function buildFreePromptThinkingRequest(input: FreePromptThinkingInput) {
+  const references = input.referenceTemplates?.length
+    ? input.referenceTemplates
+      .map(
+        (template, index) =>
+          `Reference ${index + 1}\nName: ${template.name}\nCategory: ${template.category}\nTags: ${template.tags.join(", ")}\nDescription: ${template.description}\nStyle intent: ${template.skillPrompt}\nPrompt skeleton: ${template.basePrompt}`,
+      )
+      .join("\n\n")
+    : "No template references available.";
+
+  return `User prompt:\n${input.prompt.trim()}\n\nReference prompt blueprints:\n${references}\n\nReturn one upgraded image-generation prompt that preserves the user's intent while making the result clearer, richer, and more production-ready.`;
+}
+
+function buildFreePromptThinkingFallback(input: FreePromptThinkingInput) {
+  const references = input.referenceTemplates?.slice(0, 2) ?? [];
+  const referenceHints = references
+    .map(
+      (template) =>
+        `${template.name}: ${template.description}. Style cues: ${template.tags.slice(0, 4).join(", ")}.`,
+    )
+    .join(" ");
+
+  const prompt = input.prompt.trim();
+  if (!prompt) {
+    return prompt;
+  }
+
+  if (!referenceHints) {
+    return `Create a polished, production-ready image with the following intent: ${prompt}. Make the composition, lighting, material detail, and atmosphere vivid, coherent, and visually specific.`;
+  }
+
+  return `Create a polished, production-ready image based on this user intent: ${prompt}. Keep the user's subject and constraints intact, but enrich the composition, lighting, materials, atmosphere, and camera language. Use these style cues as inspiration without copying them directly: ${referenceHints}`;
+}
+
+function normalizePrompt(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }

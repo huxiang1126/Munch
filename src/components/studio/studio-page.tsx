@@ -56,7 +56,7 @@ function PendingGenerationCard({
   const statusLabel = statusLabelByStatus[event?.status ?? item.status] ?? "Processing";
 
   return (
-    <div className="relative mb-1 break-inside-avoid overflow-hidden rounded-[6px] border border-white/[0.06] bg-black">
+    <div className="group relative mb-1 break-inside-avoid overflow-hidden rounded-[6px] border border-white/[0.06] bg-black">
       <div className="relative aspect-[2/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(13,13,14,0.92)_48%,rgba(6,6,7,1)_100%)]">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-[-8%] top-[12%] h-32 w-32 rounded-full bg-white/10 blur-3xl" />
@@ -75,6 +75,30 @@ function PendingGenerationCard({
             style={isFailed ? { transform: "translateX(0)", width: "100%" } : undefined}
           />
         </div>
+        {isFailed ? (
+          <div className="absolute right-3 top-3 z-10 flex translate-y-1 gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => void onRegenerate(item.id)}
+              disabled={actioning !== null}
+              title="重新生成"
+              aria-label="重新生成"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white backdrop-blur-md transition hover:border-white/24 hover:bg-black/65 disabled:opacity-60"
+            >
+              {actioning === "regenerate" ? <LoaderCircle className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => void onDelete(item.id)}
+              disabled={actioning !== null}
+              title="删除"
+              aria-label="删除"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white/88 backdrop-blur-md transition hover:border-white/24 hover:bg-black/65 hover:text-white disabled:opacity-60"
+            >
+              {actioning === "delete" ? <LoaderCircle className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            </button>
+          </div>
+        ) : null}
 
         <div className="flex h-full flex-col justify-between p-4">
           <div className="flex items-center justify-between gap-3">
@@ -98,28 +122,6 @@ function PendingGenerationCard({
               <p className="text-sm font-medium text-white">{item.templateName}</p>
               <p className="mt-1 text-xs text-white/55">{getModelLabel(item.model)}</p>
               <p className="mt-3 text-xs leading-5 text-white/58">{message}</p>
-              {isFailed ? (
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void onRegenerate(item.id)}
-                    disabled={actioning !== null}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/8 px-2.5 py-1.5 text-[11px] font-medium text-white transition hover:border-white/24 hover:bg-white/12 disabled:opacity-60"
-                  >
-                    {actioning === "regenerate" ? <LoaderCircle className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
-                    重新生成
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void onDelete(item.id)}
-                    disabled={actioning !== null}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white disabled:opacity-60"
-                  >
-                    {actioning === "delete" ? <LoaderCircle className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                    删除
-                  </button>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
@@ -158,6 +160,44 @@ function CompletedGenerationCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_42%,rgba(0,0,0,0.16)_72%,rgba(0,0,0,0.76)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="absolute right-3 top-3 z-10 flex translate-y-1 gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <button
+            type="button"
+            title="重新生成"
+            aria-label="重新生成"
+            onClick={(event) => {
+              event.stopPropagation();
+              void onRegenerate(item.id);
+            }}
+            disabled={actioning !== null}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white backdrop-blur-md transition hover:border-white/24 hover:bg-black/65 disabled:opacity-60"
+          >
+            {actioning === "regenerate" ? <LoaderCircle className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+          </button>
+          <a
+            href={item.thumbnailUrl}
+            download
+            title="下载"
+            aria-label="下载"
+            onClick={(event) => event.stopPropagation()}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white backdrop-blur-md transition hover:border-white/24 hover:bg-black/65"
+          >
+            <Download className="size-4" />
+          </a>
+          <button
+            type="button"
+            title="删除"
+            aria-label="删除"
+            onClick={(event) => {
+              event.stopPropagation();
+              void onDelete(item.id);
+            }}
+            disabled={actioning !== null}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white/88 backdrop-blur-md transition hover:border-white/24 hover:bg-black/65 hover:text-white disabled:opacity-60"
+          >
+            {actioning === "delete" ? <LoaderCircle className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+          </button>
+        </div>
         <div className="absolute inset-x-0 bottom-0 z-10 translate-y-2 px-4 pb-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <p className="text-sm font-medium text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]">
             {item.templateName}
@@ -165,41 +205,6 @@ function CompletedGenerationCard({
           <p className="mt-1 text-xs text-white/60">
             {getModelLabel(item.model)}
           </p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                void onRegenerate(item.id);
-              }}
-              disabled={actioning !== null}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/8 px-2 py-1.5 text-[11px] font-medium text-white transition hover:border-white/24 hover:bg-white/12 disabled:opacity-60"
-            >
-              {actioning === "regenerate" ? <LoaderCircle className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
-              重新生成
-            </button>
-            <a
-              href={item.thumbnailUrl}
-              download
-              onClick={(event) => event.stopPropagation()}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white"
-            >
-              <Download className="size-3.5" />
-              下载
-            </a>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                void onDelete(item.id);
-              }}
-              disabled={actioning !== null}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-transparent px-2 py-1.5 text-[11px] font-medium text-white/78 transition hover:border-white/24 hover:bg-white/8 hover:text-white disabled:opacity-60"
-            >
-              {actioning === "delete" ? <LoaderCircle className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-              删除
-            </button>
-          </div>
         </div>
       </div>
     </div>

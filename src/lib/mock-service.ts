@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { compileFreePromptWithThinking } from "@/lib/ai/llm-client";
+import { dbTemplateToRuntime } from "@/lib/template-adapters";
 import { compilePrompt } from "@/lib/ai/prompt-compiler";
 import { generateWithModel } from "@/lib/ai/model-router";
 import { TIER_LIMITS, getCreditCost } from "@/lib/constants";
 import { calculateCredits } from "@/lib/credits";
 import { AppError } from "@/lib/errors";
 import { addTransaction, now, pushEvent, state, type StoredGeneration, type TaskEvent, wait } from "@/lib/mock-store";
-import { resolveRuntimeTemplateById } from "@/lib/template-source";
+import { getPublishedTemplates, resolveRuntimeTemplateById } from "@/lib/template-source";
 import { ensureUserState } from "@/lib/user-state";
 import type { GenerateRequest, HistoryItem } from "@/types/api";
 import type { AppUser } from "@/types/auth";
@@ -46,6 +47,59 @@ async function validateVariables(
   }
 
   return template;
+}
+
+async function getThinkingTemplateReferences(prompt: string) {
+  const normalizedPrompt = prompt.trim().toLowerCase();
+  if (!normalizedPrompt) {
+    return [];
+  }
+
+  const promptTokens = Array.from(
+    new Set(normalizedPrompt.match(/[\p{Script=Han}]{2,}|[a-z0-9-]{3,}/gu) ?? []),
+  );
+  const templateRecords = await getPublishedTemplates();
+
+  return templateRecords
+    .map((record) => {
+      const runtime = dbTemplateToRuntime(record);
+      const haystack = [
+        runtime.name,
+        runtime.description,
+        runtime.category,
+        runtime.tags.join(" "),
+        runtime.skillPrompt,
+        runtime.basePrompt,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      let score = 0;
+      for (const token of promptTokens) {
+        if (haystack.includes(token)) {
+          score += token.length > 6 ? 3 : 2;
+        }
+      }
+
+      if (normalizedPrompt.includes(runtime.category.toLowerCase())) {
+        score += 4;
+      }
+
+      return {
+        runtime,
+        score,
+      };
+    })
+    .sort((a, b) => b.score - a.score || a.runtime.sortOrder - b.runtime.sortOrder)
+    .slice(0, 3)
+    .map(({ runtime }) => ({
+      name: runtime.name,
+      category: runtime.category,
+      description: runtime.description,
+      tags: runtime.tags,
+      skillPrompt: runtime.skillPrompt,
+      basePrompt: runtime.basePrompt,
+    }));
 }
 
 export function getCreditsSnapshot(userId: string) {
@@ -274,10 +328,14 @@ async function runGenerationTask(userId: string, taskId: string) {
 
     if (generation.generationMode === "free") {
       generation.rawPrompt = generation.prompt ?? "";
+      const thinkingReferences = generation.thinkingEnabled
+        ? await getThinkingTemplateReferences(generation.prompt ?? "")
+        : [];
       generation.compiledPrompt = generation.thinkingEnabled
         ? await compileFreePromptWithThinking({
           prompt: generation.prompt ?? "",
           targetModel: generation.model,
+          referenceTemplates: thinkingReferences,
         })
         : generation.prompt ?? "";
       generation.negativePrompt = undefined;
