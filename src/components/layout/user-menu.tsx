@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, CreditCard, History, LogOut, Shield } from "lucide-react";
+import { ChevronDown, CreditCard, History, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { isLocalSuperAdminEmail } from "@/lib/local-admin";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -58,7 +57,6 @@ export function UserMenu() {
   }, []);
 
   const initials = useMemo(() => getInitials(user?.displayName ?? user?.email ?? "Munch"), [user?.displayName, user?.email]);
-  const canAccessAdmin = isLocalSuperAdminEmail(user?.email);
 
   async function handleLogout() {
     setOpen(false);
@@ -118,19 +116,6 @@ export function UserMenu() {
           </div>
 
           <div className="mt-3 grid gap-2">
-            {canAccessAdmin ? (
-              <Link
-                href="/admin/templates"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-[18px] border border-border/60 bg-bg-base/55 px-4 py-3 text-sm text-text-primary transition hover:border-border-hover hover:bg-bg-hover"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Shield className="size-4 text-brand" />
-                  模板后台
-                </span>
-                <span className="text-[11px] uppercase tracking-[0.22em] text-text-tertiary">Admin</span>
-              </Link>
-            ) : null}
             <Link
               href="/studio"
               onClick={() => setOpen(false)}
