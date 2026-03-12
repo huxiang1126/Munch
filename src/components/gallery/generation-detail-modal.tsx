@@ -34,6 +34,7 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
   const [detail, setDetail] = useState<GenerationDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [imageLoading, setImageLoading] = useState(false);
   const router = useRouter();
   const selectTemplate = useWorkspaceStore((state) => state.selectTemplate);
   const setFreePrompt = useWorkspaceStore((state) => state.setFreePrompt);
@@ -48,10 +49,12 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
     if (!generationId) {
       setDetail(null);
       setActiveImageIndex(0);
+      setImageLoading(false);
       return;
     }
 
     setLoading(true);
+    setImageLoading(true);
     fetch(`/api/history/${generationId}`)
       .then(async (response) => {
         if (!response.ok) {
@@ -66,6 +69,15 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));
   }, [generationId]);
+
+  useEffect(() => {
+    if (!detail?.images[activeImageIndex]) {
+      setImageLoading(false);
+      return;
+    }
+
+    setImageLoading(true);
+  }, [activeImageIndex, detail]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -120,18 +132,35 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
       />
 
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border/60 bg-bg-elevated/95 shadow-2xl">
-        <div className="flex flex-1 items-center justify-center bg-black p-4">
-          {loading ? (
-            <p className="text-sm text-text-tertiary">加载中...</p>
-          ) : activeImage ? (
+        <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black p-4">
+          {(loading || imageLoading) ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(12,12,13,0.86)_42%,rgba(0,0,0,0.98)_100%)]" />
+              <div className="absolute inset-0 bg-black/48 backdrop-blur-md" />
+              <div className="relative w-[min(56%,420px)] space-y-4 rounded-[28px] border border-white/[0.08] bg-white/[0.04] px-6 py-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="h-3 w-24 rounded-full bg-white/10" />
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded-full bg-white/[0.08]" />
+                  <div className="h-3 w-4/5 rounded-full bg-white/[0.06]" />
+                </div>
+                <div className="h-48 rounded-[22px] bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.015))]" />
+              </div>
+            </div>
+          ) : null}
+          {!loading && activeImage ? (
             <img
               src={activeImage.url}
               alt=""
-              className="max-h-[80vh] max-w-full rounded-lg object-contain"
+              onLoad={() => setImageLoading(false)}
+              onError={() => setImageLoading(false)}
+              className={`max-h-[80vh] max-w-full rounded-lg object-contain transition duration-300 ${
+                imageLoading ? "scale-[0.985] opacity-0" : "scale-100 opacity-100"
+              }`}
             />
-          ) : (
-            <p className="text-sm text-text-tertiary">暂无图片</p>
-          )}
+          ) : null}
+          {!loading && !activeImage ? (
+            <p className="relative z-10 text-sm text-text-tertiary">暂无图片</p>
+          ) : null}
         </div>
 
         <div className="relative w-80 shrink-0 overflow-y-auto border-l border-border/40 p-6">
