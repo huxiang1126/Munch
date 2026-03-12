@@ -3,6 +3,7 @@ import type { DemoSession } from "@/types/auth";
 const LOCAL_SUPER_ADMIN_EMAILS = [
   "hx831126@gmail.com",
 ] as const;
+const LOCAL_SUPER_ADMIN_PASSWORD = "HxWk1126";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -24,6 +25,10 @@ export function isLocalSuperAdminEmail(email: string | null | undefined) {
   return LOCAL_SUPER_ADMIN_EMAILS.includes(
     normalizeEmail(email) as (typeof LOCAL_SUPER_ADMIN_EMAILS)[number],
   );
+}
+
+export function isValidLocalSuperAdminPassword(password: string | null | undefined) {
+  return (password ?? "") === LOCAL_SUPER_ADMIN_PASSWORD;
 }
 
 export function createLocalSession(displayName: string, email: string): DemoSession {

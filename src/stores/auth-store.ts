@@ -11,13 +11,19 @@ interface AuthState {
   status: AuthStatus;
   user: AppUser | null;
   hydrate: () => Promise<void>;
-  loginDemo: (payload?: { displayName?: string; email?: string }) => Promise<void>;
+  loginDemo: (payload?: { displayName?: string; email?: string; password?: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 async function fetchJson<T>(input: RequestInfo, init?: RequestInit) {
   const response = await fetch(input, init);
   if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(payload?.message ?? "请求失败");
+    }
+
     throw new Error("请求失败");
   }
   return (await response.json()) as T;
@@ -56,6 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       body: JSON.stringify({
         displayName: payload?.displayName ?? "Munch Beta User",
         email: payload?.email ?? "demo@munch.ai",
+        password: payload?.password,
       }),
     });
 

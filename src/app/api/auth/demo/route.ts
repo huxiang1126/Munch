@@ -2,19 +2,34 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createDemoSession, setDemoSession } from "@/lib/auth";
+import { isLocalSuperAdminEmail, isValidLocalSuperAdminPassword } from "@/lib/local-admin";
 import { ensureUserState } from "@/lib/user-state";
 
 const schema = z.object({
   displayName: z.string().min(1).default("Munch Beta User"),
   email: z.string().email().default("demo@munch.ai"),
+  password: z.string().optional(),
 });
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const parsed = schema.safeParse(body);
+  const email = parsed.success ? parsed.data.email : "demo@munch.ai";
+  const password = parsed.success ? parsed.data.password : undefined;
+
+  if (isLocalSuperAdminEmail(email) && !isValidLocalSuperAdminPassword(password)) {
+    return NextResponse.json(
+      {
+        error: "INVALID_CREDENTIALS",
+        message: "邮箱或密码错误",
+      },
+      { status: 401 },
+    );
+  }
+
   const session = createDemoSession(
     parsed.success ? parsed.data.displayName : "Munch Beta User",
-    parsed.success ? parsed.data.email : "demo@munch.ai",
+    email,
   );
 
   const user = ensureUserState({

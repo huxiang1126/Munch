@@ -27,7 +27,7 @@ function getSafeRedirect(pathname: string | null) {
 export default function LoginPage() {
   const router = useRouter();
   const loginDemo = useAuthStore((state) => state.loginDemo);
-  const [email, setEmail] = useState("hx831126@gmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +53,7 @@ export default function LoginPage() {
     const normalizedEmail = email.trim().toLowerCase();
     const isLocalAdmin = isLocalSuperAdminEmail(normalizedEmail);
 
-    if (!normalizedEmail || (!isLocalAdmin && !password.trim())) {
+    if (!normalizedEmail || !password.trim()) {
       setError("请输入邮箱和密码");
       return;
     }
@@ -72,6 +72,7 @@ export default function LoginPage() {
         await loginDemo({
           email: normalizedEmail,
           displayName: "HX Super Admin",
+          password,
         });
       } else {
         const supabase = createSupabaseBrowserClient();
@@ -87,6 +88,7 @@ export default function LoginPage() {
           await loginDemo({
             email: normalizedEmail,
             displayName: normalizedEmail.split("@")[0] || "Munch User",
+            password,
           });
         }
       }
