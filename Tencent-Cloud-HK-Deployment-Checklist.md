@@ -274,6 +274,8 @@
 - 给你 Nginx 配置文件
 - 帮你整理证书部署位置
 - 检查 `munch.love` / `www.munch.love`
+- 给 HTTPS 站点补 `client_max_body_size 25M;`
+  避免模板试用和自由创作上传参考图时被 Nginx 默认 1MB 限制拦截
 
 ---
 
