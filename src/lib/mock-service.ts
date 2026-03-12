@@ -55,9 +55,7 @@ async function getThinkingTemplateReferences(prompt: string) {
     return [];
   }
 
-  const promptTokens = Array.from(
-    new Set(normalizedPrompt.match(/[\p{Script=Han}]{2,}|[a-z0-9-]{3,}/gu) ?? []),
-  );
+  const promptTokens = extractThinkingTokens(normalizedPrompt);
   const templateRecords = await getPublishedTemplates();
 
   return templateRecords
@@ -77,7 +75,7 @@ async function getThinkingTemplateReferences(prompt: string) {
       let score = 0;
       for (const token of promptTokens) {
         if (haystack.includes(token)) {
-          score += token.length > 6 ? 3 : 2;
+          score += token.length >= 4 ? 4 : token.length === 3 ? 3 : 2;
         }
       }
 
@@ -90,8 +88,9 @@ async function getThinkingTemplateReferences(prompt: string) {
         score,
       };
     })
+    .filter(({ score }) => score >= 3)
     .sort((a, b) => b.score - a.score || a.runtime.sortOrder - b.runtime.sortOrder)
-    .slice(0, 3)
+    .slice(0, 1)
     .map(({ runtime }) => ({
       name: runtime.name,
       category: runtime.category,
@@ -100,6 +99,30 @@ async function getThinkingTemplateReferences(prompt: string) {
       skillPrompt: runtime.skillPrompt,
       basePrompt: runtime.basePrompt,
     }));
+}
+
+function extractThinkingTokens(prompt: string) {
+  const latinTokens = prompt.match(/[a-z0-9-]{3,}/g) ?? [];
+  const hanSegments = prompt.match(/[\p{Script=Han}]{2,}/gu) ?? [];
+  const hanTokens = new Set<string>();
+
+  for (const segment of hanSegments) {
+    if (segment.length <= 2) {
+      hanTokens.add(segment);
+      continue;
+    }
+
+    for (let size = 2; size <= Math.min(4, segment.length); size += 1) {
+      for (let start = 0; start <= segment.length - size; start += 1) {
+        const token = segment.slice(start, start + size);
+        if (token.length >= 2) {
+          hanTokens.add(token);
+        }
+      }
+    }
+  }
+
+  return Array.from(new Set([...latinTokens, ...hanTokens]));
 }
 
 export function getCreditsSnapshot(userId: string) {

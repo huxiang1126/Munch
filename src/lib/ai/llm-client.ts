@@ -144,7 +144,7 @@ export async function compileFreePromptWithThinking(
           content: [
             {
               type: "text",
-              text: `You are an image prompt strategist. Interpret the user's intent and rewrite it into one strong production-ready image prompt for the target model "${input.targetModel}". Preserve the user's core subject, mood, composition, and constraints. Make it clearer, more visual, more specific, and more generation-ready, but do not add random concepts that were not implied. Use any provided template references only as stylistic scaffolding, not as a hard copy target. Output only the final prompt text.`,
+              text: `You are an image prompt strategist. Rewrite the user's request into one clean final image-generation prompt for the target model "${input.targetModel}". Preserve the user's core subject, mood, composition, and hard constraints. Make it clearer, more visual, more specific, and more generation-ready, but do not add random concepts that were not implied. Use any provided template references only as loose stylistic scaffolding. Write the final prompt in the same language as the user's request. Do not mention template names, reference prompts, user intent, style cues, or any meta-instructions. Output only the final prompt text.`,
             },
           ],
         },
@@ -164,8 +164,8 @@ export async function compileFreePromptWithThinking(
 
   if (!response.ok) {
     const body = await response.text();
-    console.error("Free prompt thinking failed, falling back to raw prompt", response.status, body);
-    return rawPrompt;
+    console.error("Free prompt thinking failed, falling back to structured prompt rewrite", response.status, body);
+    return buildFreePromptThinkingFallback(input);
   }
 
   const result = (await response.json()) as {
@@ -185,7 +185,7 @@ export async function compileFreePromptWithThinking(
   };
 
   if (result.error || !Array.isArray(result.choices)) {
-    console.error("Free prompt thinking returned error payload, falling back to raw prompt");
+    console.error("Free prompt thinking returned error payload, falling back to structured prompt rewrite");
     return buildFreePromptThinkingFallback(input);
   }
 
@@ -245,35 +245,51 @@ function buildFreePromptThinkingRequest(input: FreePromptThinkingInput) {
     ? input.referenceTemplates
       .map(
         (template, index) =>
-          `Reference ${index + 1}\nName: ${template.name}\nCategory: ${template.category}\nTags: ${template.tags.join(", ")}\nDescription: ${template.description}\nStyle intent: ${template.skillPrompt}\nPrompt skeleton: ${template.basePrompt}`,
+          `Reference ${index + 1}\nCategory: ${template.category}\nTags: ${template.tags.join(", ")}\nDescription: ${template.description}\nStyle direction: ${template.skillPrompt}\nPrompt blueprint: ${template.basePrompt}`,
       )
       .join("\n\n")
     : "No template references available.";
 
-  return `User prompt:\n${input.prompt.trim()}\n\nReference prompt blueprints:\n${references}\n\nReturn one upgraded image-generation prompt that preserves the user's intent while making the result clearer, richer, and more production-ready.`;
+  return `User prompt:\n${input.prompt.trim()}\n\nReference prompt blueprints:\n${references}\n\nRewrite the user's idea into one final image-generation prompt in the same language as the user. Keep the user's subject, styling, and hard constraints intact. You may borrow only relevant visual language from the references. Do not mention template names, style cues, user intent, references, or any meta instructions. Output only one clean final prompt.`;
 }
 
 function buildFreePromptThinkingFallback(input: FreePromptThinkingInput) {
-  const references = input.referenceTemplates?.slice(0, 2) ?? [];
-  const referenceHints = references
-    .map(
-      (template) =>
-        `${template.name}: ${template.description}. Style cues: ${template.tags.slice(0, 4).join(", ")}.`,
-    )
-    .join(" ");
-
   const prompt = input.prompt.trim();
   if (!prompt) {
     return prompt;
   }
 
-  if (!referenceHints) {
-    return `Create a polished, production-ready image with the following intent: ${prompt}. Make the composition, lighting, material detail, and atmosphere vivid, coherent, and visually specific.`;
+  const primaryReference = input.referenceTemplates?.[0];
+  const isChinesePrompt = /[\p{Script=Han}]/u.test(prompt);
+
+  if (!primaryReference) {
+    return isChinesePrompt
+      ? `${prompt}。高写实表达，主体明确，构图完整，光线层次清晰，材质与细节真实可感，整体氛围高级、克制、可直接生成。`
+      : `${prompt}. High realism, strong subject separation, refined composition, layered lighting, realistic material detail, and a polished production-ready finish.`;
   }
 
-  return `Create a polished, production-ready image based on this user intent: ${prompt}. Keep the user's subject and constraints intact, but enrich the composition, lighting, materials, atmosphere, and camera language. Use these style cues as inspiration without copying them directly: ${referenceHints}`;
+  const styleDirection = summarizeReferenceDirection(primaryReference, isChinesePrompt);
+
+  return isChinesePrompt
+    ? `${prompt}。整体画面参考${styleDirection}，保持用户原始主体与约束不变，强化构图、镜头语言、光线层次、材质细节与成片质感，输出高完成度的图像结果。`
+    : `${prompt}. Shape the image with ${styleDirection}, while preserving the user's original subject and constraints. Strengthen composition, camera language, lighting depth, material detail, and overall finish for a polished final image.`;
 }
 
 function normalizePrompt(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function summarizeReferenceDirection(
+  template: NonNullable<FreePromptThinkingInput["referenceTemplates"]>[number],
+  isChinesePrompt: boolean,
+) {
+  const tagSummary = template.tags.slice(0, 3).join(isChinesePrompt ? "、" : ", ");
+  const styleSource = template.skillPrompt.trim() || template.description.trim() || template.basePrompt.trim();
+  const compactStyle = styleSource.replace(/\s+/g, " ").slice(0, isChinesePrompt ? 60 : 120);
+
+  if (isChinesePrompt) {
+    return `${compactStyle}${tagSummary ? `，并融入${tagSummary}` : ""}`;
+  }
+
+  return `${compactStyle}${tagSummary ? `, with cues such as ${tagSummary}` : ""}`;
 }
