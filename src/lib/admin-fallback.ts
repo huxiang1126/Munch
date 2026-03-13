@@ -35,6 +35,7 @@ const globalForFallback = globalThis as typeof globalThis & {
 
 const FALLBACK_TEMPLATES_FILE = join(process.cwd(), ".munch", "admin-templates.json");
 const FALLBACK_TEMPLATE_UPLOADS_DIR = join(process.cwd(), "public", "admin-uploads");
+const FALLBACK_DELETED_TEMPLATE_SLUGS_FILE = join(process.cwd(), ".munch", "deleted-template-slugs.json");
 
 function cloneTemplate(template: DbTemplate): DbTemplate {
   return {
@@ -68,18 +69,54 @@ function cloneTemplateInsert(template: TemplateInsert): TemplateInsert {
   };
 }
 
+function readDeletedTemplateSlugs() {
+  try {
+    if (!existsSync(FALLBACK_DELETED_TEMPLATE_SLUGS_FILE)) {
+      return new Set<string>();
+    }
+
+    const raw = JSON.parse(readFileSync(FALLBACK_DELETED_TEMPLATE_SLUGS_FILE, "utf8")) as unknown;
+    if (!Array.isArray(raw)) {
+      return new Set<string>();
+    }
+
+    return new Set(raw.filter((item): item is string => typeof item === "string"));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function persistDeletedTemplateSlugs(slugs: Set<string>) {
+  mkdirSync(dirname(FALLBACK_DELETED_TEMPLATE_SLUGS_FILE), { recursive: true });
+  writeFileSync(
+    FALLBACK_DELETED_TEMPLATE_SLUGS_FILE,
+    JSON.stringify([...slugs].sort(), null, 2),
+    "utf8",
+  );
+}
+
 const fallbackState: FallbackAdminState =
   globalForFallback.__munchAdminFallback ??
   (globalForFallback.__munchAdminFallback = {
     profiles: new Map<string, ProfileRow>(),
   });
 
-function bundledSeedTemplateInserts() {
+function initialTemplateInserts() {
   const merged = new Map<string, TemplateInsert>();
 
   for (const template of staticTemplates.map(staticTemplateToDb)) {
     merged.set(template.slug, cloneTemplateInsert(template));
   }
+
+  for (const template of seedTemplates as unknown as readonly TemplateInsert[]) {
+    merged.set(template.slug, cloneTemplateInsert(template));
+  }
+
+  return [...merged.values()];
+}
+
+function incrementalSeedTemplateInserts() {
+  const merged = new Map<string, TemplateInsert>();
 
   for (const template of seedTemplates as unknown as readonly TemplateInsert[]) {
     merged.set(template.slug, cloneTemplateInsert(template));
@@ -100,16 +137,17 @@ function createFallbackTemplateRecord(template: TemplateInsert): DbTemplate {
 }
 
 function seedFallbackTemplates() {
-  return bundledSeedTemplateInserts().map(createFallbackTemplateRecord);
+  return initialTemplateInserts().map(createFallbackTemplateRecord);
 }
 
 function reconcileSeedTemplates(existingTemplates: DbTemplate[]) {
   const nextTemplates = [...existingTemplates];
   const existingSlugs = new Set(existingTemplates.map((template) => template.slug));
+  const deletedSeedSlugs = readDeletedTemplateSlugs();
   let didChange = false;
 
-  for (const template of bundledSeedTemplateInserts()) {
-    if (existingSlugs.has(template.slug)) {
+  for (const template of incrementalSeedTemplateInserts()) {
+    if (existingSlugs.has(template.slug) || deletedSeedSlugs.has(template.slug)) {
       continue;
     }
 
@@ -303,6 +341,10 @@ export function getFallbackTemplateById(id: string, includeUnpublished = false) 
 
 export function createFallbackTemplate(payload: TemplateInsert) {
   const templates = readFallbackTemplates();
+  const deletedSeedSlugs = readDeletedTemplateSlugs();
+  if (deletedSeedSlugs.delete(payload.slug)) {
+    persistDeletedTemplateSlugs(deletedSeedSlugs);
+  }
   const template: DbTemplate = {
     id: randomUUID(),
     ...payload,
@@ -340,8 +382,18 @@ export function deleteFallbackTemplate(id: string) {
     return false;
   }
 
-  templates.splice(index, 1);
+  const [deletedTemplate] = templates.splice(index, 1);
   persistFallbackTemplates(templates);
+
+  if (deletedTemplate) {
+    const seedSlugs = new Set(incrementalSeedTemplateInserts().map((template) => template.slug));
+    if (seedSlugs.has(deletedTemplate.slug)) {
+      const deletedSeedSlugs = readDeletedTemplateSlugs();
+      deletedSeedSlugs.add(deletedTemplate.slug);
+      persistDeletedTemplateSlugs(deletedSeedSlugs);
+    }
+  }
+
   return true;
 }
 
