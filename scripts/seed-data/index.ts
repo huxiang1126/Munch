@@ -1,3 +1,4 @@
+import { brutalistStairwellDualEditorial } from "./brutalist-stairwell-dual-editorial";
 import { breathingFishCloseup } from "./breathing-fish-closeup";
 import { blueHourEditorialGrid } from "./blue-hour-editorial-grid";
 import { crimsonCloseupEditorial } from "./crimson-closeup-editorial";
@@ -15,6 +16,7 @@ import { sunsetEditorial132Grid } from "./sunset-editorial-132-grid";
 import { toyStoreDollWindow } from "./toy-store-doll-window";
 
 export const seedTemplates = [
+  brutalistStairwellDualEditorial,
   breathingFishCloseup,
   blueHourEditorialGrid,
   crimsonCloseupEditorial,

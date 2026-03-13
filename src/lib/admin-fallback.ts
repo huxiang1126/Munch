@@ -15,6 +15,7 @@ import { addTransaction, now, state as mockState } from "@/lib/mock-store";
 import { staticTemplateToDb } from "@/lib/template-adapters";
 import type { AppUser } from "@/types/auth";
 import type { Database, DbTemplate, UserRole } from "@/types/database";
+import { seedTemplates } from "../../scripts/seed-data";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type TemplateInsert = Database["public"]["Tables"]["templates"]["Insert"];
@@ -51,14 +52,73 @@ function cloneTemplate(template: DbTemplate): DbTemplate {
   };
 }
 
+function cloneTemplateInsert(template: TemplateInsert): TemplateInsert {
+  return {
+    ...template,
+    tags: [...template.tags],
+    compatible_models: [...template.compatible_models],
+    default_image_size: {
+      width: template.default_image_size.width,
+      height: template.default_image_size.height,
+    },
+    variables: template.variables.map((variable) => ({
+      ...variable,
+      options: variable.options?.map((option) => ({ ...option })),
+    })),
+  };
+}
+
 const fallbackState: FallbackAdminState =
   globalForFallback.__munchAdminFallback ??
   (globalForFallback.__munchAdminFallback = {
     profiles: new Map<string, ProfileRow>(),
   });
 
+function bundledSeedTemplateInserts() {
+  const merged = new Map<string, TemplateInsert>();
+
+  for (const template of staticTemplates.map(staticTemplateToDb)) {
+    merged.set(template.slug, cloneTemplateInsert(template));
+  }
+
+  for (const template of seedTemplates as unknown as readonly TemplateInsert[]) {
+    merged.set(template.slug, cloneTemplateInsert(template));
+  }
+
+  return [...merged.values()];
+}
+
+function createFallbackTemplateRecord(template: TemplateInsert): DbTemplate {
+  const timestamp = now();
+
+  return {
+    id: randomUUID(),
+    ...cloneTemplateInsert(template),
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
+
 function seedFallbackTemplates() {
-  return staticTemplates.map(staticTemplateToDb);
+  return bundledSeedTemplateInserts().map(createFallbackTemplateRecord);
+}
+
+function reconcileSeedTemplates(existingTemplates: DbTemplate[]) {
+  const nextTemplates = [...existingTemplates];
+  const existingSlugs = new Set(existingTemplates.map((template) => template.slug));
+  let didChange = false;
+
+  for (const template of bundledSeedTemplateInserts()) {
+    if (existingSlugs.has(template.slug)) {
+      continue;
+    }
+
+    nextTemplates.unshift(createFallbackTemplateRecord(template));
+    existingSlugs.add(template.slug);
+    didChange = true;
+  }
+
+  return { templates: nextTemplates, didChange };
 }
 
 function resolveTemplateUploadPath(template: DbTemplate) {
@@ -111,8 +171,11 @@ function readFallbackTemplates() {
     if (existsSync(FALLBACK_TEMPLATES_FILE)) {
       const raw = JSON.parse(readFileSync(FALLBACK_TEMPLATES_FILE, "utf8")) as unknown;
       if (Array.isArray(raw)) {
-        const recovered = (raw as DbTemplate[]).map(recoverTemplatePreview);
-        persistFallbackTemplates(recovered);
+        const { templates, didChange } = reconcileSeedTemplates(raw as DbTemplate[]);
+        const recovered = templates.map(recoverTemplatePreview);
+        if (didChange || JSON.stringify(recovered) !== JSON.stringify(raw)) {
+          persistFallbackTemplates(recovered);
+        }
         return recovered;
       }
     }
