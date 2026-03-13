@@ -2,12 +2,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { AppError } from "@/lib/errors";
-import { createLocalSession } from "@/lib/local-admin";
+import { createLocalSession, getLocalManagedUserByEmail, isLocalSuperAdminEmail } from "@/lib/local-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureUserState } from "@/lib/user-state";
 import type { AppUser, DemoSession } from "@/types/auth";
 
-export const DEMO_SESSION_COOKIE = "munch_demo_session";
+export const DEMO_SESSION_COOKIE = "munch_demo_session_v2";
 
 export function createDemoSession(displayName: string, email: string): DemoSession {
   return createLocalSession(displayName, email);
@@ -23,6 +23,18 @@ export function readDemoSession(cookieValue: string | undefined) {
   } catch {
     return null;
   }
+}
+
+export function isValidDemoSession(session: DemoSession | null | undefined) {
+  if (!session?.email) {
+    return false;
+  }
+
+  if (isLocalSuperAdminEmail(session.email)) {
+    return true;
+  }
+
+  return getLocalManagedUserByEmail(session.email) !== null;
 }
 
 function shouldUseSecureDemoCookie(request?: Request) {
@@ -108,7 +120,7 @@ export async function getAuthenticatedUser() {
 
   const cookieStore = await cookies();
   const session = readDemoSession(cookieStore.get(DEMO_SESSION_COOKIE)?.value);
-  if (!session) {
+  if (!session || !isValidDemoSession(session)) {
     return null;
   }
 

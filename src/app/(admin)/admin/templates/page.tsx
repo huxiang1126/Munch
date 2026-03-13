@@ -190,8 +190,8 @@ export default function AdminTemplatesPage() {
                     <p className="mt-2 text-sm font-medium text-text-primary">{getModelLabel(template.default_model)}</p>
                   </div>
                   <div className="rounded-[22px] border border-border/60 bg-bg-base/55 px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.26em] text-text-tertiary">倍率</p>
-                    <p className="mt-2 text-lg font-medium text-text-primary">{template.credit_multiplier}x</p>
+                    <p className="text-[11px] uppercase tracking-[0.26em] text-text-tertiary">计费</p>
+                    <p className="mt-2 text-lg font-medium text-text-primary">按模型</p>
                   </div>
                 </div>
 

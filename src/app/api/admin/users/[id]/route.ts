@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { listFallbackProfiles, recordFallbackCreditAdjustment, updateFallbackProfile } from "@/lib/admin-fallback";
 import { requireAdmin } from "@/lib/admin-auth";
+import { getLocalManagedUserById, updateLocalManagedUser } from "@/lib/local-admin";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -22,14 +23,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if ("tier" in body) {
       allowed.tier = body.tier;
     }
-    if ("role" in body) {
-      allowed.role = body.role;
-    }
-
     if (!supabase) {
       const currentProfile = listFallbackProfiles().find((profile) => profile.id === id);
       const previousBalance = currentProfile?.credit_balance ?? 0;
       const updatedProfile = updateFallbackProfile(id, allowed);
+
+      if (!updatedProfile) {
+        return NextResponse.json({ error: "用户不存在" }, { status: 404 });
+      }
+
+      if (typeof body.password === "string" && body.password.trim() && getLocalManagedUserById(id)) {
+        updateLocalManagedUser(id, { password: body.password.trim() });
+      }
 
       if (typeof allowed.credit_balance === "number") {
         recordFallbackCreditAdjustment(id, allowed.credit_balance - previousBalance, creditNote);

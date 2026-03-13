@@ -1,5 +1,5 @@
 import type { GenerationModel, UserTier } from "@/types/generation";
-import { getModelConfig, IMAGE_MODELS } from "@/lib/models";
+import { ALL_IMAGE_MODEL_IDS, getModelConfig, IMAGE_MODELS } from "@/lib/models";
 
 export const APP_NAME = "Munch";
 export const APP_DOMAIN = "munch.love";
@@ -34,30 +34,17 @@ export const TIER_LIMITS: Record<
   free: {
     maxConcurrentTasks: 1,
     maxImagesPerTask: 2,
-    availableModels: ["nano-banana-2-1k", "nano-banana-2-2k"],
+    availableModels: [...ALL_IMAGE_MODEL_IDS],
   },
   basic: {
     maxConcurrentTasks: 2,
     maxImagesPerTask: 4,
-    availableModels: [
-      "nano-banana-2-1k",
-      "nano-banana-2-2k",
-      "nano-banana-2-4k",
-      "nano-banana-pro-2k",
-      "seedream-4.5",
-    ],
+    availableModels: [...ALL_IMAGE_MODEL_IDS],
   },
   pro: {
     maxConcurrentTasks: 3,
     maxImagesPerTask: 4,
-    availableModels: [
-      "nano-banana-2-1k",
-      "nano-banana-2-2k",
-      "nano-banana-2-4k",
-      "nano-banana-pro-2k",
-      "nano-banana-pro-4k",
-      "seedream-4.5",
-    ],
+    availableModels: [...ALL_IMAGE_MODEL_IDS],
   },
 };
 

@@ -790,7 +790,7 @@ export function TemplateForm({ initialData }: TemplateFormProps) {
         <SectionHeader
           eyebrow="Operations"
           title="Publishing controls"
-          description="Use sorting, tier gating, and credit multipliers to make the public library feel intentionally curated."
+          description="Use sorting and tier gating to make the public library feel intentionally curated. Billing is now decided only by the selected model."
         />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-border/60 bg-bg-base/55 p-5">
@@ -815,7 +815,7 @@ export function TemplateForm({ initialData }: TemplateFormProps) {
             </select>
           </div>
           <div className="rounded-[24px] border border-border/60 bg-bg-base/55 p-5">
-            <label className={labelClassName}>积分倍率</label>
+            <label className={labelClassName}>历史倍率（已停用）</label>
             <input
               type="number"
               min="0.1"
@@ -823,6 +823,7 @@ export function TemplateForm({ initialData }: TemplateFormProps) {
               value={creditMultiplier}
               onChange={(event) => setCreditMultiplier(Number(event.target.value))}
               className={inputClassName}
+              disabled
             />
           </div>
           <div className="flex items-center rounded-[24px] border border-border/60 bg-bg-base/55 p-5">

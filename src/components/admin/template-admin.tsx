@@ -533,7 +533,7 @@ export function TemplateAdmin() {
             </div>
           </Section>
 
-          <Section title="生成参数" description="模型兼容性、默认尺寸和积分倍率都在这里。">
+          <Section title="生成参数" description="模型兼容性和默认尺寸都在这里。模板倍率字段保留仅为兼容旧数据，当前计费只看模型。">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <FieldLabel>默认模型</FieldLabel>
@@ -550,7 +550,7 @@ export function TemplateAdmin() {
                 </select>
               </div>
               <div>
-                <FieldLabel>积分倍率</FieldLabel>
+                <FieldLabel>历史倍率（已停用）</FieldLabel>
                 <Input
                   type="number"
                   step="0.1"
@@ -560,6 +560,7 @@ export function TemplateAdmin() {
                       creditMultiplier: Number(event.target.value) || 1,
                     })
                   }
+                  disabled
                   className="h-11 rounded-2xl border-border/70 bg-bg-elevated/82 text-text-primary"
                 />
               </div>

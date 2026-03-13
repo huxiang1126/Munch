@@ -4,9 +4,10 @@ import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
-import { isLocalSuperAdminEmail } from "@/lib/local-admin";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
+
+const LOCAL_SUPER_ADMIN_EMAIL = "hx831126@gmail.com";
 
 function getSafeRedirect(pathname: string | null) {
   if (!pathname) {
@@ -51,7 +52,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
-    const isLocalAdmin = isLocalSuperAdminEmail(normalizedEmail);
+    const isLocalAdmin = normalizedEmail === LOCAL_SUPER_ADMIN_EMAIL;
 
     if (!normalizedEmail || !password.trim()) {
       setError("请输入邮箱和密码");

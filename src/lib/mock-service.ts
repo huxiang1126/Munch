@@ -285,7 +285,7 @@ export async function createGenerationTask(user: AppUser, payload: GenerateReque
       throw new AppError(400, "INVALID_MODEL", "当前模板不支持所选模型");
     }
 
-    creditsCharged = calculateCredits(payload.model, payload.imageCount, template);
+    creditsCharged = calculateCredits(payload.model, payload.imageCount);
     templateName = template.name;
     variables = payload.variables;
   }

@@ -363,6 +363,12 @@ export function VariableEditor() {
                     {getModelDisplayText(model)}
                   </button>
                 ))}
+                {!template.compatible_models.includes("seedream-4.5") &&
+                template.variables.some((variable) => variable.type === "image") ? (
+                  <p className="rounded-lg border border-border/60 bg-bg-hover/45 px-3 py-2 text-xs leading-5 text-text-tertiary">
+                    Seedream 4.5 当前只支持纯文本出图。这个模板包含参考图输入，所以这里不会开放 Seedream。
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">

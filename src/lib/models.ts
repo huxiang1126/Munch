@@ -11,10 +11,17 @@ export interface ModelConfig {
   apiKeyEnv: string;
   icon: string;
   description: string;
+  usdPricePerImage: number;
   creditPerImage: number;
   resolution?: KieResolution;
   quality?: KieQuality;
   supportsReferenceImages: boolean;
+}
+
+const CREDITS_PER_USD = 400;
+
+function toCredits(usdPricePerImage: number) {
+  return Math.ceil(usdPricePerImage * CREDITS_PER_USD);
 }
 
 const LEGACY_MODEL_ALIASES = {
@@ -31,7 +38,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🍌",
     description: "轻量出图，速度更快",
-    creditPerImage: 4,
+    usdPricePerImage: 0.039,
+    creditPerImage: toCredits(0.039),
     resolution: "1K",
     supportsReferenceImages: true,
   },
@@ -43,7 +51,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🍌",
     description: "通用质量，适合大多数模板",
-    creditPerImage: 5,
+    usdPricePerImage: 0.078,
+    creditPerImage: toCredits(0.078),
     resolution: "2K",
     supportsReferenceImages: true,
   },
@@ -55,7 +64,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🍌",
     description: "更高分辨率，适合精修输出",
-    creditPerImage: 7,
+    usdPricePerImage: 0.156,
+    creditPerImage: toCredits(0.156),
     resolution: "4K",
     supportsReferenceImages: true,
   },
@@ -67,7 +77,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🍌",
     description: "高质量参考图生成",
-    creditPerImage: 8,
+    usdPricePerImage: 0.09,
+    creditPerImage: toCredits(0.09),
     resolution: "2K",
     supportsReferenceImages: true,
   },
@@ -79,7 +90,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🍌",
     description: "最高精度，适合高质输出",
-    creditPerImage: 12,
+    usdPricePerImage: 0.12,
+    creditPerImage: toCredits(0.12),
     resolution: "4K",
     supportsReferenceImages: true,
   },
@@ -91,7 +103,8 @@ export const IMAGE_MODELS = {
     apiKeyEnv: "KIE_API_KEY",
     icon: "🌱",
     description: "高表现力文生图",
-    creditPerImage: 10,
+    usdPricePerImage: 0.0325,
+    creditPerImage: toCredits(0.0325),
     quality: "high",
     supportsReferenceImages: false,
   },

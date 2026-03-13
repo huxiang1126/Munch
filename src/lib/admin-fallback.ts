@@ -4,6 +4,13 @@ import { dirname, join } from "node:path";
 
 import { templates as staticTemplates } from "@/data/templates";
 import { getImageDimensions } from "@/lib/image-dimensions";
+import {
+  getLocalManagedUserByEmail,
+  getLocalManagedUserById,
+  isLocalSuperAdminEmail,
+  listLocalManagedUsers,
+  updateLocalManagedUser,
+} from "@/lib/local-admin";
 import { addTransaction, now, state as mockState } from "@/lib/mock-store";
 import { staticTemplateToDb } from "@/lib/template-adapters";
 import type { AppUser } from "@/types/auth";
@@ -12,9 +19,13 @@ import type { Database, DbTemplate, UserRole } from "@/types/database";
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type TemplateInsert = Database["public"]["Tables"]["templates"]["Insert"];
 type TemplateUpdate = Database["public"]["Tables"]["templates"]["Update"];
+type FallbackProfile = ProfileRow & {
+  email?: string | null;
+  auth_source?: "local-super-admin" | "local-whitelist" | "runtime";
+};
 
 type FallbackAdminState = {
-  profiles: Map<string, ProfileRow>;
+  profiles: Map<string, FallbackProfile>;
 };
 
 const globalForFallback = globalThis as typeof globalThis & {
@@ -128,8 +139,28 @@ function toFallbackProfile(user: AppUser, role: UserRole = "admin"): ProfileRow 
   };
 }
 
+function toLocalWhitelistProfile(user: ReturnType<typeof listLocalManagedUsers>[number]): FallbackProfile {
+  return {
+    id: user.id,
+    display_name: user.displayName,
+    avatar_url: null,
+    phone: null,
+    credit_balance: user.credits,
+    tier: user.tier,
+    role: "user",
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
+    email: user.email,
+    auth_source: "local-whitelist",
+  };
+}
+
 function syncProfilesFromMockUsers() {
   for (const user of mockState.users.values()) {
+    if (!isLocalSuperAdminEmail(user.email) && !getLocalManagedUserByEmail(user.email)) {
+      continue;
+    }
+
     const current = fallbackState.profiles.get(user.id);
     fallbackState.profiles.set(user.id, {
       ...(current ?? toFallbackProfile(user, "user")),
@@ -139,17 +170,34 @@ function syncProfilesFromMockUsers() {
       updated_at: now(),
     });
   }
+
+  for (const user of listLocalManagedUsers()) {
+    const current = fallbackState.profiles.get(user.id);
+    fallbackState.profiles.set(user.id, {
+      ...(current ?? toLocalWhitelistProfile(user)),
+      display_name: user.displayName,
+      credit_balance: user.credits,
+      tier: user.tier,
+      role: "user",
+      created_at: current?.created_at ?? user.createdAt,
+      updated_at: user.updatedAt,
+      email: user.email,
+      auth_source: "local-whitelist",
+    });
+  }
 }
 
 export function ensureFallbackAdminUser(user: AppUser) {
   const current = fallbackState.profiles.get(user.id);
-  const nextProfile: ProfileRow = {
+  const nextProfile: FallbackProfile = {
     ...(current ?? toFallbackProfile(user, "admin")),
     display_name: user.displayName,
     credit_balance: user.credits,
     tier: user.tier,
     role: current?.role ?? "admin",
     updated_at: now(),
+    email: user.email,
+    auth_source: "local-super-admin",
   };
 
   fallbackState.profiles.set(user.id, nextProfile);
@@ -237,9 +285,15 @@ export function deleteFallbackTemplate(id: string) {
 export function listFallbackProfiles() {
   syncProfilesFromMockUsers();
 
-  return [...fallbackState.profiles.values()].sort((left, right) =>
-    right.created_at.localeCompare(left.created_at),
-  );
+  return [...fallbackState.profiles.values()]
+    .filter((profile) => {
+      if (profile.id === "local-super-admin") {
+        return true;
+      }
+
+      return getLocalManagedUserById(profile.id) !== null;
+    })
+    .sort((left, right) => right.created_at.localeCompare(left.created_at)) as FallbackProfile[];
 }
 
 export function updateFallbackProfile(id: string, updates: Partial<ProfileRow>) {
@@ -266,6 +320,18 @@ export function updateFallbackProfile(id: string, updates: Partial<ProfileRow>) 
   };
 
   fallbackState.profiles.set(id, nextProfile);
+
+  const localManagedUser = getLocalManagedUserById(id);
+  if (localManagedUser) {
+    updateLocalManagedUser(id, {
+      displayName: updates.display_name ?? localManagedUser.displayName,
+      tier: updates.tier ?? localManagedUser.tier,
+      credits:
+        typeof updates.credit_balance === "number"
+          ? updates.credit_balance
+          : localManagedUser.credits,
+    });
+  }
 
   const mockUser = mockState.users.get(id);
   if (mockUser) {

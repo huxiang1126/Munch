@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/types/database";
 
-const DEMO_SESSION_COOKIE = "munch_demo_session";
+const DEMO_SESSION_COOKIE = "munch_demo_session_v2";
 
 function hasSupabaseEnv() {
   return Boolean(
@@ -44,9 +44,7 @@ function redirectWithCookies(url: URL, source: NextResponse) {
 
 async function authenticateRequest(request: NextRequest) {
   const response = createPassthroughResponse(request);
-  const hasDemoSession = Boolean(
-    request.cookies.get(DEMO_SESSION_COOKIE)?.value,
-  );
+  const hasDemoSession = Boolean(request.cookies.get(DEMO_SESSION_COOKIE)?.value);
 
   if (!hasSupabaseEnv()) {
     return {
