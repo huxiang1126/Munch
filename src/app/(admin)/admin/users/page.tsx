@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, KeyRound, Shield, Sparkles, UserPlus, Users, Wallet } from "lucide-react";
 
+import { LoadingDots } from "@/components/shared/loading-dots";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"] & {
@@ -296,8 +297,10 @@ export default function AdminUsersPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14 text-center text-sm text-text-tertiary">
-          用户加载中...
+        <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14">
+          <div className="flex items-center justify-center">
+            <LoadingDots label="用户加载中" />
+          </div>
         </div>
       ) : users.length === 0 ? (
         <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14 text-center text-sm text-text-tertiary">

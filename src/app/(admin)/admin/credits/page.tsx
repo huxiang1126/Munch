@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, CreditCard, Sparkles, Wallet } from "lucide-react";
 
+import { LoadingDots } from "@/components/shared/loading-dots";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -267,7 +268,9 @@ export default function AdminCreditsPage() {
           </div>
 
           {loading ? (
-            <div className="py-14 text-center text-sm text-text-tertiary">积分流水加载中...</div>
+            <div className="flex items-center justify-center py-14">
+              <LoadingDots label="积分流水加载中" />
+            </div>
           ) : transactions.length === 0 ? (
             <div className="py-14 text-center text-sm text-text-tertiary">暂无积分流水</div>
           ) : (

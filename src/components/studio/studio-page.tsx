@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { VariableEditor } from "@/components/creation/variable-editor";
 import { GenerationDetailModal } from "@/components/gallery/generation-detail-modal";
 import { BottomBar } from "@/components/layout/bottom-bar";
+import { LoadingDots } from "@/components/shared/loading-dots";
 import { useSse } from "@/hooks/use-sse";
 import { getModelLabel } from "@/lib/models";
 import { useWorkspaceStore } from "@/stores/workspace-store";
@@ -379,8 +380,8 @@ export function StudioPage() {
   if (isLoading && !optimisticTask) {
     return (
       <>
-        <div className="px-4 pb-36 pt-8 text-sm text-text-tertiary">
-          图片加载中...
+        <div className="flex min-h-[36vh] items-center justify-center px-4 pb-36 pt-8">
+          <LoadingDots label="图片加载中" />
         </div>
         <BottomBar />
       </>

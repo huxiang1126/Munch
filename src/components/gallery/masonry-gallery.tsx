@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { templates as staticTemplates } from "@/data/templates";
 import { staticTemplateToDb } from "@/lib/template-adapters";
 import { useWorkspaceStore } from "@/stores/workspace-store";
+import { LoadingDots } from "@/components/shared/loading-dots";
 
 import { GalleryCard } from "./gallery-card";
 
@@ -50,8 +51,8 @@ export function MasonryGallery() {
 
   if (loading && filteredTemplates.length === 0) {
     return (
-      <div className="px-4 pb-36 pt-8 text-sm text-text-tertiary xl:pl-16 xl:pr-6">
-        模板加载中...
+      <div className="flex min-h-[32vh] items-center justify-center px-4 pb-36 pt-8 xl:pl-16 xl:pr-6">
+        <LoadingDots label="模板加载中" />
       </div>
     );
   }

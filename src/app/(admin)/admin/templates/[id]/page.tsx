@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { TemplateForm } from "@/components/admin/template-form";
+import { LoadingDots } from "@/components/shared/loading-dots";
 import type { DbTemplate } from "@/types/database";
 
 export default function EditTemplatePage() {
@@ -44,7 +45,11 @@ export default function EditTemplatePage() {
   }
 
   if (!template) {
-    return <div className="text-sm text-text-tertiary">模板加载中...</div>;
+    return (
+      <div className="flex min-h-[28vh] items-center justify-center">
+        <LoadingDots label="模板加载中" />
+      </div>
+    );
   }
 
   return <TemplateForm initialData={template} />;

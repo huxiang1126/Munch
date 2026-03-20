@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 
+import { LoadingDots } from "@/components/shared/loading-dots";
 import { templateCategoryLabels } from "@/constants/template-categories";
 import { getModelLabel } from "@/lib/models";
 import type { DbTemplate } from "@/types/database";
@@ -121,8 +122,10 @@ export default function AdminTemplatesPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14 text-center text-sm text-text-tertiary">
-          模板加载中...
+        <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14">
+          <div className="flex items-center justify-center">
+            <LoadingDots label="模板加载中" />
+          </div>
         </div>
       ) : templates.length === 0 ? (
         <div className="rounded-[32px] border border-border/60 bg-bg-elevated/80 px-5 py-14 text-center text-sm text-text-tertiary">

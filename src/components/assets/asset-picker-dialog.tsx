@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LoadingDots } from "@/components/shared/loading-dots";
 import { cn } from "@/lib/utils";
 import type { UserAsset, UserAssetsResponse } from "@/types/api";
 
@@ -187,6 +188,12 @@ export function AssetPickerDialog({
               );
             })}
           </div>
+
+          {isLoading ? (
+            <div className="mt-6 flex min-h-40 items-center justify-center rounded-2xl border border-border/50 bg-bg-hover/24">
+              <LoadingDots label="素材加载中" />
+            </div>
+          ) : null}
 
           {!isLoading && items.length === 0 ? (
             <div className="mt-6 flex min-h-40 flex-col items-center justify-center rounded-2xl border border-border/50 bg-bg-hover/30 text-center">

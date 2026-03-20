@@ -6,6 +6,7 @@ import { ChevronDown, CreditCard, History, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { LoadingDots } from "@/components/shared/loading-dots";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -67,7 +68,9 @@ export function UserMenu() {
 
   if (status === "loading") {
     return (
-      <div className="h-10 w-[116px] rounded-full border border-border/70 bg-bg-elevated/78 shadow-[0_14px_28px_-22px_rgba(15,15,16,0.28)]" />
+      <div className="inline-flex h-10 min-w-[116px] items-center justify-center rounded-full border border-border/70 bg-bg-elevated/78 px-4 shadow-[0_14px_28px_-22px_rgba(15,15,16,0.28)]">
+        <LoadingDots label="" compact className="gap-0" />
+      </div>
     );
   }
 

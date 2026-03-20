@@ -161,6 +161,19 @@
   }
 }
 
+@keyframes loading-dot-float {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0) scale(0.88);
+    opacity: 0.28;
+  }
+  40% {
+    transform: translateY(-4px) scale(1);
+    opacity: 1;
+  }
+}
+
 @keyframes thinking-pill-glow {
   0%,
   100% {
@@ -258,6 +271,14 @@ a {
 .glow-muted {
   --glow-fill: var(--glow-muted-fill);
   --glow-fill-hover: var(--glow-muted-fill-hover);
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  animation: loading-dot-float 1.15s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .floating-rail {

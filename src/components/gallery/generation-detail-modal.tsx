@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, RefreshCw, X } from "lucide-react";
 
+import { LoadingDots } from "@/components/shared/loading-dots";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import type { GenerationModel } from "@/types/generation";
 
@@ -137,13 +138,8 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(12,12,13,0.86)_42%,rgba(0,0,0,0.98)_100%)]" />
               <div className="absolute inset-0 bg-black/48 backdrop-blur-md" />
-              <div className="relative w-[min(56%,420px)] space-y-4 rounded-[28px] border border-white/[0.08] bg-white/[0.04] px-6 py-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="h-3 w-24 rounded-full bg-white/10" />
-                <div className="space-y-2">
-                  <div className="h-3 w-full rounded-full bg-white/[0.08]" />
-                  <div className="h-3 w-4/5 rounded-full bg-white/[0.06]" />
-                </div>
-                <div className="h-48 rounded-[22px] bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.015))]" />
+              <div className="relative flex min-h-44 w-[min(48%,340px)] items-center justify-center rounded-[28px] border border-white/[0.08] bg-white/[0.04] px-6 py-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <LoadingDots label="加载中" tone="inverse" />
               </div>
             </div>
           ) : null}
@@ -262,7 +258,9 @@ export function GenerationDetailModal({ generationId, onClose }: Props) {
               </div>
             </div>
           ) : loading ? null : (
-            <div className="pt-10 text-sm text-text-tertiary">暂无详情</div>
+            <div className="flex min-h-52 items-center justify-center pt-4">
+              <LoadingDots label="暂无详情" />
+            </div>
           )}
         </div>
       </div>
