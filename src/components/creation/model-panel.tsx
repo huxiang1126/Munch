@@ -47,26 +47,20 @@ function ToggleRow({
   );
 }
 
-const ratioOptions = {
-  landscape: ["1:1", "4:3", "3:2", "16:9"],
-  portrait: ["1:1", "3:4", "2:3", "9:16"],
-} as const;
+const ratioOptions = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
 export function ModelPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const creationMode = useWorkspaceStore((state) => state.creationMode);
-  const orientation = useWorkspaceStore((state) => state.orientation);
   const aspectRatio = useWorkspaceStore((state) => state.aspectRatio);
   const imageCount = useWorkspaceStore((state) => state.imageCount);
   const selectedModel = useWorkspaceStore((state) => state.selectedModel);
   const setCreationMode = useWorkspaceStore((state) => state.setCreationMode);
-  const setOrientation = useWorkspaceStore((state) => state.setOrientation);
   const setAspectRatio = useWorkspaceStore((state) => state.setAspectRatio);
   const setImageCount = useWorkspaceStore((state) => state.setImageCount);
   const setModel = useWorkspaceStore((state) => state.setModel);
   const user = useAuthStore((state) => state.user);
   const { data: creditData } = useCredits();
 
-  const availableRatios = useMemo(() => ratioOptions[orientation], [orientation]);
   const tier = creditData?.tier ?? user?.tier ?? "free";
   const availableModels = useMemo(
     () => TIER_LIMITS[tier].availableModels,
@@ -75,10 +69,10 @@ export function ModelPanel({ open, onClose }: { open: boolean; onClose: () => vo
   const cost = getCreditCost(selectedModel).perImage * imageCount;
 
   useEffect(() => {
-    if (!availableRatios.some((value) => value === aspectRatio)) {
-      setAspectRatio(availableRatios[0]);
+    if (!ratioOptions.some((value) => value === aspectRatio)) {
+      setAspectRatio("1:1");
     }
-  }, [aspectRatio, availableRatios, setAspectRatio]);
+  }, [aspectRatio, setAspectRatio]);
 
   useEffect(() => {
     if (!availableModels.length) {
@@ -108,15 +102,7 @@ export function ModelPanel({ open, onClose }: { open: boolean; onClose: () => vo
             onChange={(value) => setCreationMode(value as "image" | "video")}
           />
           <ToggleRow
-            options={[
-              { value: "landscape", label: "横向" },
-              { value: "portrait", label: "纵向" },
-            ]}
-            selected={orientation}
-            onChange={(value) => setOrientation(value as "landscape" | "portrait")}
-          />
-          <ToggleRow
-            options={availableRatios.map((value) => ({ value, label: value }))}
+            options={ratioOptions.map((value) => ({ value, label: value }))}
             selected={aspectRatio}
             onChange={setAspectRatio}
           />

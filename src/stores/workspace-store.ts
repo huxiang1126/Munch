@@ -12,6 +12,7 @@ import type { GenerationModel } from "@/types/generation";
 
 const fallbackTemplates = staticTemplates.map(staticTemplateToDb);
 const defaultTemplate = fallbackTemplates[0];
+const SUPPORTED_ASPECT_RATIOS = new Set(["16:9", "4:3", "1:1", "3:4", "9:16"]);
 
 function sanitizeTemplate(template: DbTemplate): DbTemplate {
   const compatibleModels: CanonicalImageModelId[] = expandCompatibleModels(template.compatible_models, {
@@ -304,6 +305,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           customPrompt: typedState?.customPrompt ?? "",
           freeImageFiles: {},
           imageFiles: {},
+          aspectRatio:
+            typedState?.aspectRatio && SUPPORTED_ASPECT_RATIOS.has(typedState.aspectRatio)
+              ? typedState.aspectRatio
+              : "1:1",
           variables: sanitizeVariablesForTemplate(
             typedState?.variables,
             templates,
